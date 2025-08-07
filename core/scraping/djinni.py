@@ -1,3 +1,4 @@
+import json
 import requests
 from bs4 import BeautifulSoup
 from core.types import Job
@@ -7,23 +8,24 @@ HEADERS = {
 }
 
 
-def scrape_djinni() -> list[Job]:
+def scrape_djinni() -> list[dict]:
     url = "https://djinni.co/jobs/?primary_keyword=Python&location=remote"
     response = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(response.text, 'html.parser')
 
+    script_tag = soup.find("script", type="application/ld+json")
+    if not script_tag:
+        print("No JSON-LD found!")
+        return []
+
+    data = json.loads(script_tag.string)
     jobs = []
-    job_listings = soup.select("li.list-jobs__item")
 
-    for job in job_listings[:10]:
-        title_tag = job.select_one("div.list-jobs__title > a")
-        company_tag = job.select_one("div.list-jobs__details__info > a")
-
-        if title_tag and company_tag:
-            jobs.append({
-                "title": title_tag.get_text(strip=True),
-                "company": company_tag.get_text(strip=True),
-                "link": f"https://djinni.co{title_tag['href']}",
-            })
+    for job_json in data:
+        jobs.append({
+            "title": job_json.get("title") or job_json.get("category") or "Python Developer",
+            "company": job_json.get("hiringOrganization", {}).get("name", "Unknown"),
+            "link": job_json.get("url", url),
+        })
 
     return jobs

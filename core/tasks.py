@@ -8,7 +8,7 @@ from .scraping.linkedin import scrape_linkedin
 def scrape_jobs(sources=None):
     print("Task started")
     if sources is None:
-        sources = ['djinni']
+        sources = ['djinni', 'linkedin']
 
     source_map = {
         'djinni': scrape_djinni,
@@ -18,13 +18,20 @@ def scrape_jobs(sources=None):
     for source in sources:
         if source in source_map:
             results = source_map[source]()
-            print(f"Data received: {results}")
+            print(f"Data received from {source}: {len(results)} jobs")
             for job in results:
-                Job.objects.get_or_create(
-                    title=job['title'],
-                    company=job['company'],
-                    link=job['link'],
-                    source=source
+                obj, created = Job.objects.get_or_create(
+                    title=job.get('title', ''),
+                    company=job.get('company', ''),
+                    url=job.get('link', ''),
+                    source=source,
+                    defaults={
+                        "description": job.get('description', ''),
+                        "location": job.get('location', ''),
+                    }
                 )
-                print(f"Job added: {job['title']}")
+                if created:
+                    print(f"Job added: {job['title']} from {source}")
+                else:
+                    print(f"Job already exists: {job['title']} from {source}")
     print("Task finished")
