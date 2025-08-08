@@ -39,7 +39,7 @@ jobs:
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
       REDIS_URL: redis://localhost:6379/0
-      DJANGO_SECRET_KEY: ci-secret-key
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       DEBUG: "False"
 
     steps:
